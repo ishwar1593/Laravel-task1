@@ -34,6 +34,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password', // Removed remember_token since it's not in your schema
+        'token',
     ];
 
     /**
