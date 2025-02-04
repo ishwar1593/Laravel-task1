@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Interfaces\MoleculeRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class MoleculeController extends Controller
 {
@@ -24,27 +25,51 @@ class MoleculeController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'molecule_name' => 'required|string|max:255|unique:molecules',
-        ]);
+        try {
+            $data = $request->validate([
+                'molecule_name' => 'required|string|max:255|unique:molecules',
+            ]);
 
-        $data['created_by'] = Auth::id();
+            $data['created_by'] = Auth::id();
 
-        $molecule = $this->moleculeRepository->createMolecule($data);
+            $molecule = $this->moleculeRepository->createMolecule($data);
 
-        return $this->jsonResponse($molecule, 201);
+            return $this->jsonResponse($molecule, 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $data = $request->validate([
-            'molecule_name' => 'required|string|max:255|unique:molecules,molecule_name,' . $id,
-        ]);
+        try {
+            $data = $request->validate([
+                'molecule_name' => 'required|string|max:255|unique:molecules,molecule_name,' . $id,
+            ]);
 
-        $data['updated_by'] = Auth::id();
+            $data['updated_by'] = Auth::id();
 
-        $molecule = $this->moleculeRepository->updateMolecule($id, $data);
-        return $this->jsonResponse($molecule);
+            $molecule = $this->moleculeRepository->updateMolecule($id, $data);
+            return $this->jsonResponse($molecule);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy($id)
