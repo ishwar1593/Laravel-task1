@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\ProductDraftController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -22,3 +23,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('product-drafts/{id}', [ProductDraftController::class, 'update']);
     Route::delete('product-drafts/{id}', [ProductDraftController::class, 'destroy']);
 });
+
+// Category Routes
+// Route::middleware('auth:sanctum')->group(function () {
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::get('categories/{id}', [CategoryController::class, 'show']);
+// });
