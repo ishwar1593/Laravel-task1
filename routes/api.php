@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\ProductDraftController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\MoleculeController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -26,6 +27,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Category Routes
 // Route::middleware('auth:sanctum')->group(function () {
-    Route::get('categories', [CategoryController::class, 'index']);
-    Route::get('categories/{id}', [CategoryController::class, 'show']);
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{id}', [CategoryController::class, 'show']);
 // });
+
+// Molecule Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('molecules', [MoleculeController::class, 'index']);
+    Route::get('molecules/{id}', [MoleculeController::class, 'show']);
+    Route::post('molecules', [MoleculeController::class, 'store']);
+    Route::put('molecules/{id}', [MoleculeController::class, 'update']);
+    Route::delete('molecules/{id}', [MoleculeController::class, 'destroy']);
+});
