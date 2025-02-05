@@ -115,4 +115,12 @@ class DraftProductController extends Controller
         }
         return response()->json($draftProduct);
     }
+
+    /**
+     * Publish a draft product.
+     */
+    public function publish($id)
+    {
+        return $this->draftProductRepository->publishDraftProduct($id);
+    }
 }

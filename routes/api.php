@@ -6,6 +6,7 @@ use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MoleculeController;
 use App\Http\Controllers\DraftProductController;
+use App\Http\Controllers\PublishedProductController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -33,10 +34,17 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Product Draft Routes
-Route::middleware(['auth:sanctum', 'auth'])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('product-drafts', [DraftProductController::class, 'index']);
     Route::get('product-drafts/{id}', [DraftProductController::class, 'show']);
     Route::post('product-drafts', [DraftProductController::class, 'store']);
     Route::put('product-drafts/{id}', [DraftProductController::class, 'update']);
     Route::delete('product-drafts/{id}', [DraftProductController::class, 'destroy']);
+    Route::post('product-drafts/publish/{id}', [DraftProductController::class, 'publish']);
+});
+
+// <?php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('published-products', [PublishedProductController::class, 'index']);
+    Route::get('published-products/{id}', [PublishedProductController::class, 'show']);
 });

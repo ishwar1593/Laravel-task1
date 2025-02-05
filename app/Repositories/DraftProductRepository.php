@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use App\Models\Molecule;
 use App\Models\ProductMolecule;
+use App\Jobs\PublishedProductJob;
 
 class DraftProductRepository implements DraftProductRepositoryInterface
 {
@@ -89,6 +90,7 @@ class DraftProductRepository implements DraftProductRepositoryInterface
             }
 
             $data['molecule_string'] = implode('+', $moleculeNames);
+            $data['is_published'] = false;
 
             // Update draft product
             $draftProduct->update($data);
@@ -113,7 +115,7 @@ class DraftProductRepository implements DraftProductRepositoryInterface
             return response()->json(['error' => 'Draft product not found'], 404);
         } catch (\Exception $e) {
             Log::error('Error updating draft product: ' . $e->getMessage());
-            return response()->json(['error' => 'Error updating draft product'. $e->getMessage()], 500);
+            return response()->json(['error' => 'Error updating draft product' . $e->getMessage()], 500);
         }
     }
 
@@ -133,6 +135,27 @@ class DraftProductRepository implements DraftProductRepositoryInterface
         } catch (\Exception $e) {
             Log::error('Error deleting draft product: ' . $e->getMessage());
             return response()->json(['error' => 'Error deleting draft product'], 500);
+        }
+    }
+
+    /**
+     * Publish a draft product.
+     */
+    public function publishDraftProduct($id)
+    {
+        try {
+            $draftProduct = DraftProduct::findOrFail($id);
+            dispatch(new PublishedProductJob($draftProduct->id));
+            return response()->json([
+                'message' => 'Publish job dispatched successfully',
+                'draft_product_id' => $draftProduct->id
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            Log::warning('Draft product not found for publishing: ' . $e->getMessage());
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Error dispatching publish job: ' . $e->getMessage());
+            return false;
         }
     }
 }
