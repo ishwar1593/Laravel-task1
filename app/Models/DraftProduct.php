@@ -49,4 +49,9 @@ class DraftProduct extends Model
     {
         return $this->belongsTo(User::class, 'deleted_by');
     }
+
+    public function molecules()
+    {
+        return $this->belongsToMany(Molecule::class, 'product_molecules', 'draft_product_id', 'molecule_id');
+    }
 }

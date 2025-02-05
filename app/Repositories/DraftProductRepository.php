@@ -7,6 +7,7 @@ use App\Models\DraftProduct;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use App\Models\Molecule;
+use App\Models\ProductMolecule;
 
 class DraftProductRepository implements DraftProductRepositoryInterface
 {
@@ -23,7 +24,11 @@ class DraftProductRepository implements DraftProductRepositoryInterface
     public function getDraftProductById($id)
     {
         try {
-            return DraftProduct::where('is_active', true)->where('id', $id)->first();
+            $draftProduct = DraftProduct::where('is_active', true)->where('id', $id)->first();
+            if (!$draftProduct) {
+                return response()->json(['error' => 'Draft product not found'], 404);
+            }
+            return $draftProduct;
         } catch (ModelNotFoundException $e) {
             Log::warning('Draft product not found: ' . $e->getMessage());
             return response()->json(['error' => 'Draft product not found'], 404);
@@ -37,18 +42,23 @@ class DraftProductRepository implements DraftProductRepositoryInterface
     {
         try {
             $moleculeIds = explode(',', $data['molecule_string']);
-            $moleculeNames = [];
 
-            foreach ($moleculeIds as $moleculeId) {
-                $molecule = Molecule::find($moleculeId);
-                if ($molecule) {
-                    $moleculeNames[] = $molecule->molecule_name;
-                }
-            }
+            // Fetch all molecules at once
+            $molecules = Molecule::whereIn('id', $moleculeIds)->pluck('molecule_name')->toArray();
+            $data['molecule_string'] = implode('+', $molecules);
 
-            $data['molecule_string'] = implode('+', $moleculeNames);
+            // Create the draft product
+            $draftProduct = DraftProduct::create($data);
 
-            return DraftProduct::create($data);
+            // Attach molecules in bulk
+            $productMolecules = collect($moleculeIds)->map(fn($id) => [
+                'draft_product_id' => $draftProduct->id,
+                'molecule_id' => $id,
+            ])->toArray();
+
+            ProductMolecule::insert($productMolecules);
+
+            return $draftProduct;
         } catch (\Illuminate\Database\QueryException $e) {
             // Check for unique constraint violation
             if ($e->getCode() == '23505') { // PostgreSQL unique violation error code
@@ -59,7 +69,7 @@ class DraftProductRepository implements DraftProductRepositoryInterface
             return response()->json(['error' => 'Error creating draft product'], 500);
         } catch (\Exception $e) {
             Log::error('Error creating draft product: ' . $e->getMessage());
-            return response()->json(['error' => 'Error creating draft product'], 500);
+            return response()->json(['error' => 'Error creating draft product' . $e->getMessage()], 500);
         }
     }
 
@@ -80,14 +90,30 @@ class DraftProductRepository implements DraftProductRepositoryInterface
 
             $data['molecule_string'] = implode('+', $moleculeNames);
 
+            // Update draft product
             $draftProduct->update($data);
+
+            // Remove existing molecule relationships
+            ProductMolecule::where('draft_product_id', $draftProduct->id)->delete();
+
+            // Insert new molecule relationships
+            foreach ($moleculeIds as $moleculeId) {
+                if (Molecule::find($moleculeId)) {
+                    ProductMolecule::create([
+                        'draft_product_id' => $draftProduct->id,
+                        'molecule_id' => $moleculeId,
+                    ]);
+                    Log::info("Updated molecule ID {$moleculeId} for draft product ID {$draftProduct->id}");
+                }
+            }
+
             return $draftProduct;
         } catch (ModelNotFoundException $e) {
             Log::warning('Draft product not found: ' . $e->getMessage());
             return response()->json(['error' => 'Draft product not found'], 404);
         } catch (\Exception $e) {
             Log::error('Error updating draft product: ' . $e->getMessage());
-            return response()->json(['error' => 'Error updating draft product'], 500);
+            return response()->json(['error' => 'Error updating draft product'. $e->getMessage()], 500);
         }
     }
 
