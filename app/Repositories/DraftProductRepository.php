@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Molecule;
 use App\Models\ProductMolecule;
 use App\Jobs\PublishedProductJob;
+use Illuminate\Support\Facades\Cache;
+
 
 class DraftProductRepository implements DraftProductRepositoryInterface
 {
@@ -109,6 +111,9 @@ class DraftProductRepository implements DraftProductRepositoryInterface
                 }
             }
 
+            // Clear cache after updating
+            $this->clearPublishedProductCache($id);
+
             return $draftProduct;
         } catch (ModelNotFoundException $e) {
             Log::warning('Draft product not found: ' . $e->getMessage());
@@ -131,6 +136,10 @@ class DraftProductRepository implements DraftProductRepositoryInterface
             }
 
             $draftProduct->update(['is_active' => false]);
+
+            // Clear cache after updating
+            $this->clearPublishedProductCache($id);
+
             return $draftProduct;
         } catch (\Exception $e) {
             Log::error('Error deleting draft product: ' . $e->getMessage());
@@ -156,6 +165,19 @@ class DraftProductRepository implements DraftProductRepositoryInterface
         } catch (\Exception $e) {
             Log::error('Error dispatching publish job: ' . $e->getMessage());
             return false;
+        }
+    }
+
+
+    /**
+     * Invalidate the cache when products are updated, created, or deleted.
+     */
+    public function clearPublishedProductCache($id = null)
+    {
+        Cache::forget('published_products');
+
+        if ($id) {
+            Cache::forget("published_product_{$id}");
         }
     }
 }

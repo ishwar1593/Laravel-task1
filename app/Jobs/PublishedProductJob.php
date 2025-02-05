@@ -36,6 +36,8 @@ class PublishedProductJob implements ShouldQueue
         DB::beginTransaction(); // Start a DB transaction
 
         try {
+            Log::info("Job started for DraftProduct ID: {$this->draftProductId}");
+
             // Retrieve Draft Product
             $draftProduct = DraftProduct::find($this->draftProductId);
             if (!$draftProduct) {
@@ -43,32 +45,65 @@ class PublishedProductJob implements ShouldQueue
                 return;
             }
 
-            // Generate a unique product_ws_code
-            $productWsCode = 'PR0-' . now()->format('YmdHis') . '-' . Str::random(4);
+            // Check if the PublishedProduct already exists for this draft product
+            $publishedProduct = PublishedProduct::where('draft_product_id', $this->draftProductId)->first();
 
-            // Create published product
-            $publishedProduct = PublishedProduct::create([
-                'draft_product_id' => $draftProduct->id,
-                'product_ws_code' => $productWsCode,
-                'product_name' => $draftProduct->product_name,
-                'manufacturer_name' => $draftProduct->manufacturer_name,
-                'category_id' => $draftProduct->category_id,
-                'sales_price' => $draftProduct->sales_price,
-                'mrp' => $draftProduct->mrp,
-                'molecule_string' => $draftProduct->molecule_string,
-                'is_banned' => $draftProduct->is_banned,
-                'is_discontinued' => $draftProduct->is_discontinued,
-                'is_assured' => $draftProduct->is_assured,
-                'is_refridgerated' => $draftProduct->is_refridgerated,
-                'is_published' => true,
-                'created_by' => $draftProduct->created_by,
-                'updated_by' => $draftProduct->updated_by,
-                'is_active' => $draftProduct->is_active,
-                'deleted_by' => $draftProduct->deleted_by,
-            ]);
+            if ($publishedProduct) {
+                // Log before update
+                Log::info("Published product found (ID: {$publishedProduct->id}). Proceeding to update.");
 
-            if (!$publishedProduct) {
-                throw new Exception("Failed to create published product for draft product ID: {$draftProduct->id}");
+                // If product exists, update the record
+                $publishedProduct->update([
+                    'product_name' => $draftProduct->product_name,
+                    'manufacturer_name' => $draftProduct->manufacturer_name,
+                    'category_id' => $draftProduct->category_id,
+                    'sales_price' => $draftProduct->sales_price,
+                    'mrp' => $draftProduct->mrp,
+                    'molecule_string' => $draftProduct->molecule_string,
+                    'is_banned' => $draftProduct->is_banned,
+                    'is_discontinued' => $draftProduct->is_discontinued,
+                    'is_assured' => $draftProduct->is_assured,
+                    'is_refridgerated' => $draftProduct->is_refridgerated,
+                    'is_published' => true,
+                    'updated_by' => $draftProduct->updated_by,
+                    'is_active' => $draftProduct->is_active,
+                    'deleted_by' => $draftProduct->deleted_by,
+                ]);
+
+                Log::info("Published product (ID: {$publishedProduct->id}) updated from draft product ID: {$draftProduct->id}");
+            } else {
+                // Log before creating a new product
+                Log::info("No PublishedProduct found. Creating new PublishedProduct for DraftProduct ID: {$draftProduct->id}");
+
+                // Generate a unique product_ws_code
+                $productWsCode = 'PR0-' . now()->format('YmdHis') . '-' . Str::random(4);
+
+                // Create published product
+                $publishedProduct = PublishedProduct::create([
+                    'draft_product_id' => $draftProduct->id,
+                    'product_ws_code' => $productWsCode,
+                    'product_name' => $draftProduct->product_name,
+                    'manufacturer_name' => $draftProduct->manufacturer_name,
+                    'category_id' => $draftProduct->category_id,
+                    'sales_price' => $draftProduct->sales_price,
+                    'mrp' => $draftProduct->mrp,
+                    'molecule_string' => $draftProduct->molecule_string,
+                    'is_banned' => $draftProduct->is_banned,
+                    'is_discontinued' => $draftProduct->is_discontinued,
+                    'is_assured' => $draftProduct->is_assured,
+                    'is_refridgerated' => $draftProduct->is_refridgerated,
+                    'is_published' => true,
+                    'created_by' => $draftProduct->created_by,
+                    'updated_by' => $draftProduct->updated_by,
+                    'is_active' => $draftProduct->is_active,
+                    'deleted_by' => $draftProduct->deleted_by,
+                ]);
+
+                if (!$publishedProduct) {
+                    throw new Exception("Failed to create published product for draft product ID: {$draftProduct->id}");
+                }
+
+                Log::info("Published product (ID: {$publishedProduct->id}) created from draft product ID: {$draftProduct->id}");
             }
 
             // Update is_published in DraftProduct
@@ -76,8 +111,7 @@ class PublishedProductJob implements ShouldQueue
             $draftProduct->save();
 
             DB::commit(); // Commit the transaction
-
-            Log::info("Published product (ID: {$publishedProduct->id}) created from draft product ID: {$draftProduct->id}");
+            Log::info("Transaction committed successfully for DraftProduct ID: {$draftProduct->id}");
 
         } catch (QueryException $qe) {
             DB::rollBack(); // Rollback in case of DB error

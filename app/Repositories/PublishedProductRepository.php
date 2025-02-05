@@ -6,33 +6,47 @@ use App\Interfaces\PublishedProductRepositoryInterface;
 use App\Models\PublishedProduct;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class PublishedProductRepository implements PublishedProductRepositoryInterface
 {
+    /**
+     * Get all published products with Redis cache.
+     */
     public function getAllPublishedProducts()
     {
         try {
-            return PublishedProduct::where('is_active', true)->get();
+            return Cache::remember('published_products', 30, function () {
+                return PublishedProduct::where('is_active', true)->get();
+            });
         } catch (\Exception $e) {
-            Log::error('Error fetching all draft products: ' . $e->getMessage());
-            return response()->json(['error' => 'Error fetching all draft products'], 500);
+            Log::error('Error fetching all published products: ' . $e->getMessage());
+            return response()->json(['error' => 'Error fetching all published products'], 500);
         }
     }
 
+    /**
+     * Get a single published product by ID with Redis cache.
+     */
     public function getPublishedProductById($id)
     {
         try {
-            $draftProduct = PublishedProduct::where('is_active', true)->where('id', $id)->first();
-            if (!$draftProduct) {
-                return response()->json(['error' => 'Draft product not found'], 404);
-            }
-            return $draftProduct;
+            return Cache::remember("published_product_{$id}", 30, function () use ($id) {
+                $publishedProduct = PublishedProduct::where('is_active', true)->where('id', $id)->first();
+
+                if (!$publishedProduct) {
+                    return response()->json(['error' => 'Published product not found'], 404);
+                }
+
+                return $publishedProduct;
+            });
         } catch (ModelNotFoundException $e) {
-            Log::warning('Draft product not found: ' . $e->getMessage());
-            return response()->json(['error' => 'Draft product not found'], 404);
+            Log::warning('Published product not found: ' . $e->getMessage());
+            return response()->json(['error' => 'Published product not found'], 404);
         } catch (\Exception $e) {
-            Log::error('Error fetching draft product by ID: ' . $e->getMessage());
-            return response()->json(['error' => 'Error fetching draft product by ID'], 500);
+            Log::error('Error fetching published product by ID: ' . $e->getMessage());
+            return response()->json(['error' => 'Error fetching published product by ID'], 500);
         }
     }
+
 }
