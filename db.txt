@@ -1,0 +1,92 @@
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    token TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_delete BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP NULL,
+    deleted_by INT NULL
+);
+
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    category_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT REFERENCES users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+    is_delete BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP NULL,
+    deleted_by INT NULL
+);
+
+CREATE TABLE molecules (
+    id SERIAL PRIMARY KEY,
+    molecule_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT REFERENCES users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+    is_delete BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP NULL,
+    deleted_by INT NULL
+);
+
+CREATE TABLE product_molecules (
+    id BIGINT PRIMARY KEY,
+    draft_product_id INT NOT NULL,
+    molecule_id INT NOT NULL,
+    FOREIGN KEY (draft_product_id) REFERENCES draft_products(id),
+    FOREIGN KEY (molecule_id) REFERENCES molecules(id)
+);
+
+
+CREATE TABLE draft_products (
+    id SERIAL PRIMARY KEY,
+    product_name VARCHAR(255) NOT NULL,
+    manufacturer_name VARCHAR(255),
+    category_id INT,
+    sales_price DECIMAL(10,2),
+    mrp DECIMAL(10,2),
+    molecule_string TEXT,
+    is_banned BOOLEAN DEFAULT FALSE,
+    is_discontinued BOOLEAN DEFAULT FALSE,
+    is_assured BOOLEAN DEFAULT FALSE,
+    is_refridgerated BOOLEAN DEFAULT FALSE,
+    is_published BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    deleted_by INT NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+);
+
+CREATE TABLE published_products (
+    id SERIAL PRIMARY KEY,
+    draft_product_id INT,
+    product_ws_code VARCHAR(255),
+    product_name VARCHAR(255) NOT NULL,
+    manufacturer_name VARCHAR(255),
+    category_id INT,
+    sales_price DECIMAL(10,2),
+    mrp DECIMAL(10,2),
+    molecule_string TEXT,
+    is_banned BOOLEAN DEFAULT FALSE,
+    is_discontinued BOOLEAN DEFAULT FALSE,
+    is_assured BOOLEAN DEFAULT FALSE,
+    is_refridgerated BOOLEAN DEFAULT FALSE,
+    is_published BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    deleted_by INT NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (draft_product_id) REFERENCES draft_products(id),
+);
