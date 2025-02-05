@@ -6,4 +6,5 @@ interface PublishedProductRepositoryInterface
 {
     public function getAllPublishedProducts();
     public function getPublishedProductById($id);
+    public function getAllBannedProducts();
 }

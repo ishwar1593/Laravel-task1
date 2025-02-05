@@ -46,5 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
 // <?php
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('published-products', [PublishedProductController::class, 'index']);
+    Route::get('published-products/banned', [PublishedProductController::class, 'bannedProducts']);
     Route::get('published-products/{id}', [PublishedProductController::class, 'show']);
 });

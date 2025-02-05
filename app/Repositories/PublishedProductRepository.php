@@ -49,4 +49,20 @@ class PublishedProductRepository implements PublishedProductRepositoryInterface
         }
     }
 
+    /**
+     * Get all banned products with Redis cache.
+     */
+    public function getAllBannedProducts()
+    {
+        try {
+            return Cache::remember('banned_products', 30, function () {
+                // return PublishedProduct::where('is_active', true)->where('is_banned', true)->get();
+                return PublishedProduct::where('is_banned', true)->get();
+            });
+        } catch (\Exception $e) {
+            Log::error('Error fetching all banned products: ' . $e->getMessage());
+            return response()->json(['error' => 'Error fetching all banned products'], 500);
+        }
+    }
+
 }

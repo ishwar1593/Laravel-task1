@@ -31,4 +31,11 @@ class PublishedProductController extends Controller
         }
         return response()->json($publishedProduct);
     }
+
+    public function bannedProducts()
+    {
+
+        $result = $this->publishedProductRepository->getAllBannedProducts();
+        return response()->json($result);
+    }
 }
