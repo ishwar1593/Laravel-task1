@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MoleculeController;
 use App\Http\Controllers\DraftProductController;
 use App\Http\Controllers\PublishedProductController;
+use App\Http\Controllers\SearchController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -43,9 +44,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('product-drafts/publish/{id}', [DraftProductController::class, 'publish']);
 });
 
-// <?php
+// Published products
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('published-products', [PublishedProductController::class, 'index']);
     Route::get('published-products/banned', [PublishedProductController::class, 'bannedProducts']);
     Route::get('published-products/{id}', [PublishedProductController::class, 'show']);
 });
+
+// Search route
+Route::get('search', [SearchController::class, 'search']);
