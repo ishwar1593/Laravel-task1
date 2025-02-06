@@ -4,10 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
 class PublishedProduct extends Model
 {
     use HasFactory;
+    use Searchable;
+
+    /**
+     * Get the name of the index associated with the model.
+     */
+    public function searchableAs(): string
+    {
+        return 'published_products_index';
+    }
+
+    /**
+     * Get the indexable data array for the model.
+     */
+    public function toSearchableArray(): array
+    {
+        $array = [
+            "product_name" => $this->product_name,
+            "product_ws_code" => $this->product_ws_code
+        ];
+
+        // Customize the data array...
+
+        return $array;
+    }
+
 
     protected $table = 'published_products';
 

@@ -13,22 +13,27 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
-        $query = $request->input('query');
+        $search_results = PublishedProduct::search($request->input('query'))->paginateRaw(10);
 
-        if (!$query) {
-            return response()->json(['error' => 'Query parameter is required'], 400);
-        }
+        return response()->json(['result' => $search_results]);
 
-        // Generate a unique cache key based on the search query
-        $cacheKey = 'search_' . md5(strtolower($query)); // Ensure case-insensitive caching
 
-        // Try fetching results from cache first
-        $results = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($query) {
-            return PublishedProduct::where('product_name', 'ILIKE', '%' . $query . '%')
-                ->orWhere('product_ws_code', 'ILIKE', '%' . $query . '%')
-                ->get();
-        });
+        // $query = $request->input('query');
 
-        return response()->json($results);
+        // if (!$query) {
+        //     return response()->json(['error' => 'Query parameter is required'], 400);
+        // }
+
+        // // Generate a unique cache key based on the search query
+        // $cacheKey = 'search_' . md5(strtolower($query)); // Ensure case-insensitive caching
+
+        // // Try fetching results from cache first
+        // $results = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($query) {
+        //     return PublishedProduct::where('product_name', 'ILIKE', '%' . $query . '%')
+        //         ->orWhere('product_ws_code', 'ILIKE', '%' . $query . '%')
+        //         ->get();
+        // });
+
+        // return response()->json($results);
     }
 }
